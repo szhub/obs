@@ -118,8 +118,6 @@ services:
     image: quay.io/prometheus/node-exporter:latest
     container_name: node_exporter
     hostname: node-exporter.lab
-    ports:
-      - 9100:9100
     command:
       - '--path.rootfs=/host'
     pid: host
@@ -132,9 +130,7 @@ services:
     container_name: mysql_exporter
     hostname: mysql-exporter.lab
     volumes:
-      - ./config.my-cnf:/home/my-cnf
-    ports:
-      - 9104:9104 
+      - ./exporters/config.my-cnf:/home/my-cnf
     command:
       - --config.my-cnf=/home/my-cnf
 
@@ -144,17 +140,13 @@ services:
     hostname: nginx-exporter.lab
     command:
       - -nginx.scrape-uri=http://web.lab:8081/stub_status
-    ports:
-      - 9113:9113
 
   blackbox_exporter:
     image: quay.io/prometheus/blackbox-exporter:latest
     container_name: blackbox_exporter
     hostname: blackbox-exporter.lab
     volumes:
-      - ./blackbox.yml:/blackbox.yml
-    ports:
-      - 9115:9115
+      - ./exporters/blackbox.yml:/blackbox.yml
     command:
       --config.file=/blackbox.yml
 
@@ -165,6 +157,4 @@ services:
     command:
       - '--config.file=/etc/alertmanager/config.yml'
     volumes:
-      - ./alertmanager-config.yml:/etc/alertmanager/config.yml
-    ports:
-      - '9093:9093'
+      - ./exporters/alertmanager-config.yml:/etc/alertmanager/config.yml
