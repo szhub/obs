@@ -1,0 +1,170 @@
+version: '3.1'
+
+services:
+
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress
+    hostname: wordpress.lab
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: exampleuser
+      WORDPRESS_DB_PASSWORD: examplepass
+      WORDPRESS_DB_NAME: exampledb
+    volumes:
+      - ./wordpress:/var/www/html
+      - /etc/localtime:/etc/localtime:ro
+      - /usr/share/zoneinfo:/usr/share/zoneinfo:ro
+
+  db:
+    image: mysql:5.7
+    container_name: db
+    hostname: db.lab
+    restart: always
+    environment:
+      MYSQL_DATABASE: exampledb
+      MYSQL_USER: exampleuser
+      MYSQL_PASSWORD: examplepass
+      MYSQL_ROOT_PASSWORD: examplepass
+    volumes:
+      - ./db:/var/lib/mysql
+      - /etc/localtime:/etc/localtime:ro
+      - /usr/share/zoneinfo:/usr/share/zoneinfo:ro
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    hostname: web.lab
+    volumes:
+    - ./nginx/:/etc/nginx/conf.d
+    # - /home/sz/containers_store/nginx/cert/nginx.crt:/etc/ssl/certs/nginx.crt:z
+    # - /home/sz/containers_store/nginx/cert/nginx.key:/etc/ssl/private/nginx.key:z
+    - /etc/localtime:/etc/localtime:ro
+    - /usr/share/zoneinfo:/usr/share/zoneinfo:ro
+    ports:
+      - 443:443
+      - 80:80
+    restart: unless-stopped
+    environment:
+      TZ: "Europe/Moscow"
+    healthcheck:
+      test: ["CMD", "service", "nginx", "status"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    hostname: prometheus.lab
+    command:
+    - --config.file=/etc/prometheus/prometheus.yml
+    - --storage.tsdb.path=/prometheus
+    - --web.console.libraries=/usr/share/prometheus/console_libraries
+    - --web.console.templates=/usr/share/prometheus/consoles
+#   - --web.config.file=web.yml
+    volumes:
+    - ./prometheus:/etc/prometheus/
+    - /etc/localtime:/etc/localtime:ro
+    - /usr/share/zoneinfo:/usr/share/zoneinfo:ro
+    restart: unless-stopped
+    environment:
+      TZ: "Europe/Moscow"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    hostname: grafana.lab
+    volumes:
+    - ./grafana:/var/lib/grafana
+    - ./grafana/provisioning/:/etc/grafana/provisioning/
+    - /etc/localtime:/etc/localtime:ro
+    - /usr/share/zoneinfo:/usr/share/zoneinfo:ro
+    restart: unless-stopped
+    environment:
+      TZ: "Europe/Moscow"
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    hostname: portainer.lab
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+    - ./portainer/:/data
+    - /etc/localtime:/etc/localtime:ro
+    - /usr/share/zoneinfo:/usr/share/zoneinfo:ro
+    userns_mode: "host"
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.1
+    container_name: cadvisor
+    hostname: cadvisor.lab
+    volumes:
+    - /:/rootfs:ro
+    - /var/run:/var/run:ro  
+    - /sys:/sys:ro
+    - /var/lib/docker/:/var/lib/docker:ro
+    - /dev/disk/:/dev/disk:ro
+    userns_mode: "host"
+    privileged: true
+    devices:
+    - "dev/kmsg"
+    restart: unless-stopped
+
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    hostname: node-exporter.lab
+    ports:
+      - 9100:9100
+    command:
+      - '--path.rootfs=/host'
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - '/:/host:ro,rslave'
+
+  mysql_exporter:
+    image: prom/mysqld-exporter
+    container_name: mysql_exporter
+    hostname: mysql-exporter.lab
+    volumes:
+      - ./config.my-cnf:/home/my-cnf
+    ports:
+      - 9104:9104 
+    command:
+      - --config.my-cnf=/home/my-cnf
+
+  nginx_exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    container_name: nginx_exporter
+    hostname: nginx-exporter.lab
+    command:
+      - -nginx.scrape-uri=http://web.lab:8081/stub_status
+    ports:
+      - 9113:9113
+
+  blackbox_exporter:
+    image: quay.io/prometheus/blackbox-exporter:latest
+    container_name: blackbox_exporter
+    hostname: blackbox-exporter.lab
+    volumes:
+      - ./blackbox.yml:/blackbox.yml
+    ports:
+      - 9115:9115
+    command:
+      --config.file=/blackbox.yml
+
+  alertmanager:
+    image: prom/alertmanager:v0.25.0
+    container_name: alertmanager
+    hostname: alertmanager.lab
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+    volumes:
+      - ./alertmanager-config.yml:/etc/alertmanager/config.yml
+    ports:
+      - '9093:9093'
