@@ -1,0 +1,36 @@
+groups:
+  - name: icmp test
+    rules:
+    - alert: icmp
+      expr: probe_icmp_duration_seconds{job="blackboxicmp",phase="rtt"} == 0
+      for: 5s
+      labels:
+        app: db 
+        several: critical
+      annotations:
+        summary: "Service unreachable"
+        description: "Проверка доступности хоста {{ $labels.instance }} с помощью icmp провалена"
+
+  - name: http_status_code test
+    rules:
+      - alert: http status
+        expr: probe_http_status_code == 0
+        for: 10s
+        labels:
+          app: frontend
+          several: critical
+        annotations:
+          summary: "Service unreachable"
+          description: "Сервис недоступен {{ $labels.instance }}"
+
+  - name: up test
+    rules:
+      - alert: up state
+        expr: up == 0
+        for: 1m
+        labels:
+          several: critical
+        annotations:
+          summary: "Instance unreachable"
+          description: "Хост недоступен {{ $labels.instance }}, задача {{ $labels.job }}"
+
