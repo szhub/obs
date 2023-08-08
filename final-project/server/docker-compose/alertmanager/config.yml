@@ -1,0 +1,41 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: [ 'alertname', 'severity', 'type', 'host' ]
+  group_wait: 5s
+  group_interval: 5m
+  repeat_interval: 1h
+  # matchers:
+  #   - severity="critical"
+  continue: false
+  receiver: 'telegram'
+
+
+# route:
+#   group_by: [ 'alertname', 'severity', 'type', 'host' ]
+#   group_wait: 15s
+#   group_interval: 5m
+#   repeat_interval: 3h
+#   matchers:
+#     - severity="medium"
+#   continue: false
+#   receiver: 'telegram'
+#   mute_time_intervals:
+#     - "mute"
+
+
+receivers:
+  - name: 'telegram'
+    telegram_configs:
+      - chat_id: -925699607
+        parse_mode: 'HTML'
+        bot_token: '6246787614:AAFLFJsMTS8neU9oIhewfMxvzLcrnC5EFPU'
+
+# time_intervals:
+#   - name: "mute"
+#     times:
+#     - start_time: 09:00
+#       end_time: 19:00    
+#     weekdays: ['monday:friday']
+#     location: "Europe/Moscow"

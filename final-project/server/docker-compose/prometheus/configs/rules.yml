@@ -1,0 +1,104 @@
+groups:
+  - name: linux hosts
+    rules:
+      - alert: size filesystems
+        expr: 100 * (node_filesystem_avail_bytes{fstype!="tmpfs"}) / (node_filesystem_size_bytes{fstype!="tmpfs"}) < 15
+        for: 5m
+        labels:
+          type: fs
+          host: linux
+          severity: medium
+        annotations:
+          summary: "Свободное место на хосте {{ $labels.instance }} в разделе {{ $labels.mountpoint }} заканчивается" 
+          description: "Cвободного пространства не более, чем {{ $value }}% )"
+  - name: online
+    rules:      
+      - alert: online
+        expr: up{job="node"} == 0
+        for: 30s
+        labels:
+          type: online
+          host: linux
+          severity: critical
+        annotations:
+          summary: "Хост {{ $labels.instance }} недоступен более 30 секунд"
+          description: "Срочно бросить работяг в бой"
+  - name: hosts ram
+    rules:
+      - alert: ram
+        expr: 100 - ((node_memory_MemAvailable_bytes * 100) / node_memory_MemTotal_bytes) > 90
+        for: 1m
+        labels:
+          type: ram
+          host: linux
+          severity: medium
+        annotations: 
+          summary: "Оперативная память на хосте {{ $labels.instance }} заканчивает"
+          description: "Текущая загрузка более {{ $value }}%"
+
+  - name: web servers
+    rules:
+      - alert: up
+        expr: apache_up == 0 or nginx_up == 0
+        for: 10s
+        labels:
+          type: online
+          host: webserver
+          severity: critical
+        annotations:
+          summary: "Веб-сервер {{ $labels.instance }} недоступен более 10 секунд"
+          description: "Работяги к бою!"
+
+  - name: http status
+    rules:
+      - alert: http status
+        expr: probe_http_status_code < 200 or probe_http_status_code > 399
+        for: 15s
+        labels:
+          type: online
+          host: websites
+          severity: critical
+        annotations:
+          summary: "Веб-сайт {{ $labels.instance }} недоступен более 15 секунд"
+          description: "Последний код ответа - {{ $value }}"
+
+
+
+
+
+
+
+  # - name: icmp test
+  #   rules:
+  #   - alert: icmp
+  #     expr: probe_icmp_duration_seconds{job="blackboxicmp",phase="rtt"} == 0
+  #     for: 5s
+  #     labels:
+  #       app: db 
+  #       severity: critical
+  #     annotations:
+  #       summary: "Service unreachable"
+  #       description: "Проверка доступности хоста {{ $labels.instance }} с помощью icmp провалена"
+
+  # - name: http_status_code test
+  #   rules:
+  #     - alert: http status
+  #       expr: probe_http_status_code == 0
+  #       for: 10s
+  #       labels:
+  #         app: frontend
+  #         severity: critical
+  #       annotations:
+  #         summary: "Service unreachable"
+  #         description: "Сервис недоступен {{ $labels.instance }}"
+
+  # - name: up test
+  #   rules:
+  #     - alert: up state
+  #       expr: up == 0
+  #       for: 1m
+  #       labels:
+  #         severity: critical
+  #       annotations:
+  #         summary: "Instance unreachable"
+  #         description: "Хост недоступен {{ $labels.instance }}, задача {{ $labels.job }}"

@@ -1,0 +1,12 @@
+# Module: elasticsearch
+# Docs: https://www.elastic.co/guide/en/beats/metricbeat/8.8/metricbeat-module-elasticsearch.html
+
+- module: elasticsearch
+  metricsets:
+    - node
+    - node_stats
+  period: 10s
+  hosts: ["https://elasticsearch:9200"]
+  
+  username: "elastic"
+  password: "Szh21091992"

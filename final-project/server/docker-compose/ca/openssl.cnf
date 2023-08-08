@@ -1,0 +1,9 @@
+[SAN]
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = grafana
+DNS.2 = prometheus
+DNS.3 = web
+DNS.4 = cadvisor
+DNS.5 = elastic
+DNS.6 = kibana
